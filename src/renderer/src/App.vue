@@ -1,7 +1,7 @@
 <template>
   <div class="drag-area">
     <!-- 工具栏 -->
-    <Toolbar ref="toolbarRef"></Toolbar>
+    <Toolbar ref="toolbarRef" @clear="handleClear"></Toolbar>
 
     <!-- 图片区域 -->
     <ImageLayer
@@ -83,9 +83,15 @@ const handleNoDataClick = async () => {
     addLayer(e);
   });
 };
+
+const handleClear = () => {
+  imageLayerList.value = [];
+  toolbarRef.value?.setWidthHeight(600, 600);
+  window.api.setWindowSize(600, 600);
+};
 </script>
 
-<style lang="less" scoped>
+<style lang="scss" scoped>
 .drag-area {
   -webkit-app-region: drag;
 }

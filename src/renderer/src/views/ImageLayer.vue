@@ -44,11 +44,7 @@ const handleNoDataClick = () => {
 };
 </script>
 
-<style lang="less" scoped>
-.image-layer-container {
-  // -webkit-app-region: drag;
-}
-
+<style lang="scss" scoped>
 .image-container {
   position: relative;
   width: 100vw;

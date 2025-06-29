@@ -10,7 +10,10 @@
   <!-- 工具栏 -->
   <div class="toolbar-area">
     <div class="header" @click="isExpandToolbarBody = !isExpandToolbarBody">
-      <div><SettingOutlined style="font-size: 12px; color: rgba(0, 0, 0, 0.67)" /> 设置</div>
+      <div>
+        <SettingOutlined style="font-size: 13px; color: rgba(0, 0, 0, 0.65)" />
+        控制面板
+      </div>
 
       <div style="margin-left: auto">
         <DownOutlined v-show="isExpandToolbarBody" />
@@ -51,7 +54,7 @@
 
       <div class="label">清空图片</div>
       <div style="text-align: right">
-        <a-button block danger :icon="h(ClearOutlined)"> 清空 </a-button>
+        <a-button block danger :icon="h(ClearOutlined)" @click="handleClear"> 清空 </a-button>
       </div>
     </div>
   </div>
@@ -67,6 +70,8 @@ import {
   SettingOutlined,
   ClearOutlined
 } from '@ant-design/icons-vue';
+
+const emit = defineEmits(['clear']);
 
 const isExpandToolbarBody = ref(false);
 const opacity = ref(96);
@@ -101,12 +106,16 @@ const setWidthHeight = (w, h) => {
   height.value = h;
 };
 
+const handleClear = () => {
+  emit('clear');
+};
+
 defineExpose({
   setWidthHeight
 });
 </script>
 
-<style lang="less" scoped>
+<style lang="scss" scoped>
 .toolbar-area {
   position: fixed;
   top: 0;
