@@ -1,4 +1,4 @@
-# fd-perfect-pixel
+# perfect-pixel
 
 An Electron application with Vue and TypeScript
 
