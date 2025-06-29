@@ -16,12 +16,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import ImageLayer from './views/ImageLayer.vue'
-import { ImageFile } from '../../entities/image-file'
+import { ref } from 'vue';
+import ImageLayer from './views/ImageLayer.vue';
+import { ImageFile } from '@entities/index';
 
-const imageLayerList = ref<any>([])
-const opacity = ref(85)
+const imageLayerList = ref<any>([]);
+const opacity = ref(85);
 
 /**
  * @description: 选择文件
@@ -30,16 +30,16 @@ const opacity = ref(85)
 const handleChooseFile = async () => {
   const files = await window.api.openFileDialog({
     filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }]
-  })
+  });
 
-  console.log(files)
+  console.log(files);
 
-  if (!files || files.length == 0) return
-  files.forEach((e) => {
-    e.path = `file://${e.path}`
-    addLayer(e)
-  })
-}
+  if (!files || files.length == 0) return;
+  files.forEach(e => {
+    e.path = `file://${e.path}`;
+    addLayer(e);
+  });
+};
 
 /**
  * @description: 添加图层
@@ -47,50 +47,55 @@ const handleChooseFile = async () => {
  * @return {*}
  */
 const addLayer = (img: any) => {
-  imageLayerList.value = []
-  imageLayerList.value.push(img)
-  window.api.setWindowSize(img.width * 0.5, img.height * 0.5)
-}
+  imageLayerList.value = [];
+  imageLayerList.value.push(img);
+  window.api.setWindowSize(img.width * 0.5, img.height * 0.5);
+};
 
 /**
  * @description: 清空图层
  * @return {*}
  */
 const handleClear = () => {
-  imageLayerList.value = []
-  window.api.setWindowSize(600, 400)
-}
+  imageLayerList.value = [];
+  window.api.setWindowSize(600, 400);
+};
 
 /**
  * @description: 更新透明度
  * @return {*}
  */
 const handleUpdateOpacity = () => {
-  // window.electron.setWindowOpacity(opacity.value / 100)
-}
+  window.api.setWindowOpacity(opacity.value / 100);
+};
 
 /**
  * @description: 拖动上传图片
  * @param {*} e
  * @return {*}
  */
-const handleLayerDrop = (e) => {
-  const files = Array.from(e.dataTransfer.files).filter((file: any) =>
+const handleLayerDrop = (e: DragEvent) => {
+  if (!e.dataTransfer) return;
+
+  const files = Array.from(e.dataTransfer.files as FileList).filter((file: File) =>
     file.type.startsWith('image/')
-  )
-  files.forEach(async (file: any) => {
-    const arrayBuffer = await file.arrayBuffer()
-    const meta = await window.api.fileToPath(arrayBuffer)
+  );
+
+  files.forEach(async (file: File) => {
+    // const arrayBuffer = await file.arrayBuffer();
+    // const meta = await window.api.fileToPath(file);
+    const path = await window.api.getPathForFile(file);
+    const size = await window.api.getImageSize(path);
 
     addLayer(
       new ImageFile({
-        path: meta.url,
-        width: meta.width,
-        height: meta.height
+        path: `file://${path}`,
+        width: size.width,
+        height: size.height
       })
-    )
-  })
-}
+    );
+  });
+};
 </script>
 
 <style lang="less">
