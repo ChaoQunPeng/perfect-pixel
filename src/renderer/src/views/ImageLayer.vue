@@ -7,7 +7,6 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
 import { ImageFile } from '@entities/index';
 
 defineProps<{

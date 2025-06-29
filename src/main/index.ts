@@ -114,7 +114,7 @@ app.whenReady().then(() => {
   });
 
   // 修改透明度
-  ipcMain.handle('set-window-opacity', (event, opacity) => {
+  ipcMain.handle('set-window-opacity', (_, opacity) => {
     mainWindow.setOpacity(opacity);
   });
 
