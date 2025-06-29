@@ -14,9 +14,13 @@ let mainWindow: BrowserWindow;
 function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 600,
+    height: 600,
+    opacity: 0.96,
     show: false,
+    frame: false, // 关键代码：隐藏标题栏和边框
+    titleBarStyle: 'hidden', // macOS 专属样式（可选）
+    // transparent: true, // 可选：实现无边框透明效果
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {

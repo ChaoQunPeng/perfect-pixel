@@ -7,46 +7,119 @@
  * @Description: 
 -->
 <template>
-  <div class="toolbar">
-    <button @click="chooseFile">
-      <span>选择图片</span>
-    </button>
-    <button @click="clear">
-      <span>清空</span>
-    </button>
+  <!-- 工具栏 -->
+  <div class="toolbar-area">
+    <div class="header" @click="isExpandToolbarBody = !isExpandToolbarBody">
+      <div><SettingOutlined style="font-size: 12px; color: rgba(0, 0, 0, 0.67)" /> 设置</div>
 
-    <input type="range" min="50" max="100" v-model="opacity" @input="updateOpacity" />
+      <div style="margin-left: auto">
+        <DownOutlined v-show="isExpandToolbarBody" />
+        <UpOutlined v-show="!isExpandToolbarBody" />
+      </div>
+    </div>
+
+    <div v-show="isExpandToolbarBody" class="body">
+      <div class="label">透明度设置</div>
+      <div class="slider">
+        <a-slider
+          v-model:value="opacity"
+          :min="30"
+          :max="100"
+          tooltip-placement="top"
+          @change="handleUpdateOpacity"
+        />
+      </div>
+
+      <div class="label">宽高设置</div>
+      <a-space class="window-size-input-area">
+        <a-input
+          class="input"
+          v-model:value.number="width"
+          placeholder="宽度(不能为0)"
+          @blur="handleWindowUpdateSize"
+          @pressEnter="handleWindowUpdateSize"
+        />
+        <CloseOutlined />
+        <a-input
+          class="input"
+          v-model:value.number="height"
+          placeholder="高度(不能为0)"
+          @blur="handleWindowUpdateSize"
+          @pressEnter="handleWindowUpdateSize"
+        />
+      </a-space>
+    </div>
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return { opacity: 80 }
-  },
+<script lang="ts" setup>
+import { ref } from 'vue';
 
-  methods: {}
-}
+const isExpandToolbarBody = ref(true);
+const opacity = ref(96);
+const width = ref(600);
+const height = ref(600);
+
+/**
+ * @description: 更新透明度
+ * @return {*}
+ */
+const handleUpdateOpacity = () => {
+  window.api.setWindowOpacity(opacity.value / 100);
+};
+
+/**
+ * @description: 更新视窗尺寸
+ * @return {*}
+ */
+const handleWindowUpdateSize = () => {
+  if (width.value == 0 || height.value == 0) return;
+  console.log(width.value, height.value);
+
+  window.api.setWindowSize(width.value, height.value);
+};
 </script>
 
-<style scoped>
-.toolbar {
-  padding: 10px;
-  background: #f0f0f0;
+<style lang="less" scoped>
+.toolbar-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
   display: flex;
-  gap: 10px;
-}
-
-button {
-  padding: 8px 12px;
-  background: #42b983;
-  color: white;
-  border: none;
+  flex-direction: column;
+  width: 278px;
   border-radius: 4px;
-  cursor: pointer;
-}
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  background: #fff;
+  user-select: none;
+  padding-top: 24px;
+  -webkit-app-region: no-drag;
 
-button:hover {
-  background: #369f6b;
+  .header {
+    display: flex;
+    padding: 10px 15px 15px 15px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .body {
+    padding: 5px 15px 15px 15px;
+
+    .label {
+      font-size: 12px;
+      margin-bottom: 12px;
+      color: rgba(0, 0, 0, 0.67);
+    }
+
+    .slider {
+      width: 242px;
+      margin-bottom: 12px;
+
+      :deep(.ant-slider) {
+        margin: 0;
+      }
+    }
+  }
 }
 </style>
