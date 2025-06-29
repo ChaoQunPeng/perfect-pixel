@@ -48,14 +48,27 @@
           @pressEnter="handleWindowUpdateSize"
         />
       </a-space>
+
+      <div class="label">清空图片</div>
+      <div style="text-align: right">
+        <a-button block danger :icon="h(ClearOutlined)"> 清空 </a-button>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { h } from 'vue';
+import {
+  CloseOutlined,
+  DownOutlined,
+  UpOutlined,
+  SettingOutlined,
+  ClearOutlined
+} from '@ant-design/icons-vue';
 
-const isExpandToolbarBody = ref(true);
+const isExpandToolbarBody = ref(false);
 const opacity = ref(96);
 const width = ref(600);
 const height = ref(600);
@@ -74,31 +87,44 @@ const handleUpdateOpacity = () => {
  */
 const handleWindowUpdateSize = () => {
   if (width.value == 0 || height.value == 0) return;
-  console.log(width.value, height.value);
-
+  debugger;
+  setWidthHeight(width.value, height.value);
   window.api.setWindowSize(width.value, height.value);
 };
+
+/**
+ * @description: 设置宽高
+ * @return {*}
+ */
+const setWidthHeight = (w, h) => {
+  width.value = w;
+  height.value = h;
+};
+
+defineExpose({
+  setWidthHeight
+});
 </script>
 
 <style lang="less" scoped>
 .toolbar-area {
   position: fixed;
   top: 0;
-  left: 0;
+  right: 0;
   z-index: 10;
   display: flex;
   flex-direction: column;
   width: 278px;
   border-radius: 4px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
   background: #fff;
   user-select: none;
-  padding-top: 24px;
+  // padding-top: 24px;
   -webkit-app-region: no-drag;
 
   .header {
     display: flex;
-    padding: 10px 15px 15px 15px;
+    padding: 15px 15px 15px 15px;
     font-size: 13px;
     cursor: pointer;
   }
@@ -114,12 +140,21 @@ const handleWindowUpdateSize = () => {
 
     .slider {
       width: 242px;
-      margin-bottom: 12px;
+      margin-bottom: 15px;
 
       :deep(.ant-slider) {
         margin: 0;
       }
     }
+  }
+}
+
+.window-size-input-area {
+  display: flex;
+  margin-bottom: 15px;
+
+  .input {
+    flex: 1;
   }
 }
 </style>
