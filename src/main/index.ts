@@ -1,19 +1,29 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage, protocol, net } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { ImageFile } from '../entities/image-file'
+import fs from 'fs'
+import path from 'path'
+
+// 创建主窗口
+let mainWindow: BrowserWindow
 
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
+      webSecurity: false, // 禁用同源策略（允许加载本地文件）
+      allowRunningInsecureContent: true, // 允许加载本地资源
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      nodeIntegration: true, // 启用 Node.js 集成
+      contextIsolation: false // 关闭上下文隔离（简化操作）
     }
   })
 
@@ -49,8 +59,57 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  // 使用 registerFileProtocol 的新签名
+  // protocol.registerFileProtocol('app', (request) => {
+  //   const pathname = request.url.replace('app://', '')
+  //   return {
+  //     path: path.normalize(path.join(__dirname, pathname))
+  //   }
+  // })
+
+  protocol.handle('fpp', (path) => {
+    return net.fetch(path)
+  })
+
+  ipcMain.handle('open-file-dialog', async (_, options: Electron.OpenDialogOptions) => {
+    const result = await dialog.showOpenDialog(mainWindow, options)
+    return result.filePaths.map((path: string) => {
+      const img = nativeImage.createFromPath(path)
+      const { width, height } = img.getSize()
+      return new ImageFile({
+        path,
+        width,
+        height
+      })
+    })
+  })
+
+  // 修改窗口大小
+  ipcMain.handle('set-window-size', (_, width, height) => {
+    mainWindow.setSize(width, height)
+  })
+
+  // 修改窗口大小
+  ipcMain.handle('get-image-size', (_, filePath) => {
+    const img = nativeImage.createFromPath(filePath)
+    return img.getSize()
+  })
+
+  ipcMain.handle('file-to-path', async (_, arrayBuffer) => {
+    const buffer = Buffer.from(new Uint8Array(arrayBuffer))
+    const img = nativeImage.createFromBuffer(buffer)
+    const { width, height } = img.getSize()
+
+    // 返回临时文件路径（可选）
+    const tempPath = require('path').join(require('os').tmpdir(), `img_${Date.now()}.png`)
+    require('fs').writeFileSync(tempPath, buffer)
+    return {
+      width,
+      height,
+      path: tempPath, // 完整的文件系统路径
+      url: `file://${tempPath}` // 可直接用于 <img> 标签
+    }
+  })
 
   createWindow()
 
