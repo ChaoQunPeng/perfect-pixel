@@ -10,6 +10,7 @@ import os from 'os';
 
 // 创建主窗口
 let mainWindow: BrowserWindow;
+let secondWindow: BrowserWindow;
 
 function createWindow(): void {
   // Create the browser window.
@@ -18,6 +19,7 @@ function createWindow(): void {
     height: 600,
     opacity: 0.96,
     show: false,
+    center: true,
     frame: false, // 关键代码：隐藏标题栏和边框
     titleBarStyle: 'hidden', // macOS 专属样式（可选）
     // transparent: true, // 可选：实现无边框透明效果
@@ -51,6 +53,48 @@ function createWindow(): void {
   }
 }
 
+function createSecondWindow(): void {
+  // Create the browser window.
+  secondWindow = new BrowserWindow({
+    width: 280,
+    height: 260,
+    x: 160,
+    y: 300,
+    show: false,
+    // resizable: false,
+    // frame: false, // 关键代码：隐藏标题栏和边框
+    // titleBarStyle: 'hidden', // macOS 专属样式（可选）
+    // transparent: true, // 可选：实现无边框透明效果
+    autoHideMenuBar: true,
+    ...(process.platform === 'linux' ? { icon } : {}),
+    webPreferences: {
+      webSecurity: false, // 禁用同源策略（允许加载本地文件）
+      allowRunningInsecureContent: true, // 允许加载本地资源
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      // nodeIntegration: true, // 启用 Node.js 集成
+      contextIsolation: false // 关闭上下文隔离（简化操作）
+    }
+  });
+
+  secondWindow.on('ready-to-show', () => {
+    secondWindow.show();
+  });
+
+  secondWindow.webContents.setWindowOpenHandler(details => {
+    shell.openExternal(details.url);
+    return { action: 'deny' };
+  });
+
+  // HMR for renderer base on electron-vite cli.
+  // Load the remote URL for development or the local html file for production.
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    secondWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/second.html`);
+  } else {
+    secondWindow.loadFile(join(__dirname, '../renderer/second.html'));
+  }
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -65,16 +109,16 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  // 使用 registerFileProtocol 的新签名
-  // protocol.registerFileProtocol('app', (request) => {
-  //   const pathname = request.url.replace('app://', '')
-  //   return {
-  //     path: path.normalize(path.join(__dirname, pathname))
-  //   }
-  // })
+  ipcMain.on('set-width-height', () => {
+    if (secondWindow) {
+      secondWindow.webContents.send('set-width-height');
+    }
+  });
 
-  protocol.handle('fpp', path => {
-    return net.fetch(path);
+  ipcMain.on('clear', () => {
+    if (mainWindow) {
+      mainWindow.webContents.send('clear');
+    }
   });
 
   ipcMain.handle('open-file-dialog', async (_, options: Electron.OpenDialogOptions) => {
@@ -123,11 +167,13 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+  createSecondWindow();
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    createSecondWindow();
   });
 });
 

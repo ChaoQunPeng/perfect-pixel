@@ -1,8 +1,5 @@
 <template>
   <div class="drag-area">
-    <!-- 工具栏 -->
-    <Toolbar ref="toolbarRef" @clear="handleClear"></Toolbar>
-
     <!-- 图片区域 -->
     <ImageLayer
       ref="imageLayer"
@@ -15,17 +12,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import ImageLayer from './views/ImageLayer.vue';
-import Toolbar from './views/Toolbar.vue';
 import { ImageFile } from '@entities/index';
 
-type ToolbarInstance = {
-  setWidthHeight: (width: number, height: number) => void;
-};
+// type ToolbarInstance = {
+//   setWidthHeight: (width: number, height: number) => void;
+// };
 
 const imageLayerList = ref<any>([]);
-const toolbarRef = ref<ToolbarInstance>();
+
+onMounted(() => {
+  window.electronApi.ipcRenderer.on('clear', () => {
+    handleClear();
+  });
+});
 
 /**
  * @description: 添加图层
@@ -35,8 +36,6 @@ const toolbarRef = ref<ToolbarInstance>();
 const addLayer = (img: any) => {
   imageLayerList.value = [];
   imageLayerList.value.push(img);
-
-  toolbarRef.value?.setWidthHeight(img.width * 0.5, img.height * 0.5);
 
   window.api.setWindowSize(img.width * 0.5, img.height * 0.5);
 };
@@ -86,7 +85,6 @@ const handleNoDataClick = async () => {
 
 const handleClear = () => {
   imageLayerList.value = [];
-  toolbarRef.value?.setWidthHeight(600, 600);
   window.api.setWindowSize(600, 600);
 };
 </script>

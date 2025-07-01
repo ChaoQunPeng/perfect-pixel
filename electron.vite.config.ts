@@ -12,7 +12,14 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/preload/index.ts'),
+        }
+      }
+    }
   },
   renderer: {
     resolve: {
@@ -24,6 +31,14 @@ export default defineConfig({
     server: {
       hmr: true
     },
-    plugins: [vue()]
+    plugins: [vue()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          browser: resolve(__dirname, 'src/renderer/second.html')
+        }
+      }
+    }
   }
 });
