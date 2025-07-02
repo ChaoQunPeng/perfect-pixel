@@ -57,7 +57,7 @@ function createSecondWindow(): void {
   // Create the browser window.
   secondWindow = new BrowserWindow({
     width: 280,
-    height: 260,
+    height: 400,
     x: 160,
     y: 300,
     show: false,
@@ -121,6 +121,12 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.on('set-panel-width-height', (_, data) => {
+    if (secondWindow) {
+      secondWindow.webContents.send('set-panel-width-height', data);
+    }
+  });
+
   ipcMain.handle('open-file-dialog', async (_, options: Electron.OpenDialogOptions) => {
     const result = await dialog.showOpenDialog(mainWindow, options);
     return result.filePaths.map((path: string) => {
@@ -132,6 +138,15 @@ app.whenReady().then(() => {
         height
       });
     });
+  });
+
+  ipcMain.handle('get-main-window-position', _ => {
+    return mainWindow.getPosition();
+  });
+
+  // 修改主窗口位置
+  ipcMain.on('set-main-window-position', (_, x, y) => {
+    mainWindow.setPosition(x, y);
   });
 
   // 修改窗口大小
@@ -172,8 +187,10 @@ app.whenReady().then(() => {
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-    createSecondWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+      createSecondWindow();
+    }
   });
 });
 

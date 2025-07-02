@@ -12,7 +12,8 @@ const api = {
   fileToPath: arrayBuffer => ipcRenderer.invoke('file-to-path', arrayBuffer),
   getPathForFile: file => {
     return webUtils.getPathForFile(file);
-  }
+  },
+  getMainWindowPosition: () => ipcRenderer.invoke('get-main-window-position')
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

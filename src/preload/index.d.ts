@@ -13,11 +13,13 @@ declare interface CustomAPI {
   fileToPath: (file) => Promise<any>;
   getPathForFile: (file) => Promise<string>;
   setWindowOpacity: (value: number) => Promise<void>;
+  setPanelWidthHeightValue: (width: number, height: number) => Promise<void>;
+  getMainWindowPosition: () => Promise<Array<number>>;
 }
 
 declare global {
   interface Window {
-    electronApi: ElectronAPI & CustomAPI;
+    electronApi: ElectronAPI;
     api: CustomAPI;
   }
 }

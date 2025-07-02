@@ -38,6 +38,11 @@ const addLayer = (img: any) => {
   imageLayerList.value.push(img);
 
   window.api.setWindowSize(img.width * 0.5, img.height * 0.5);
+
+  window.electronApi.ipcRenderer.send('set-panel-width-height', {
+    width: img.width * 0.5,
+    height: img.height * 0.5
+  });
 };
 
 /**
