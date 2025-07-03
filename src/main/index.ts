@@ -39,6 +39,20 @@ function createWindow(): void {
     mainWindow.show();
   });
 
+  // 监听窗口移动事件
+  mainWindow.on('move', () => {
+    const [x, y] = mainWindow.getPosition();
+    console.log(`窗口移动到位置: x=${x}, y=${y}`);
+    secondWindow.webContents.send('main-window-moved', { x, y });
+  });
+
+  // 监听窗口大小变化事件
+  mainWindow.on('resize', () => {
+    const [width, height] = mainWindow.getSize();
+    console.log(`窗口大小变为: width=${width}, height=${height}`);
+    secondWindow.webContents.send('main-window-resized', { width, height });
+  });
+
   mainWindow.webContents.setWindowOpenHandler(details => {
     shell.openExternal(details.url);
     return { action: 'deny' };

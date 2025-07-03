@@ -123,6 +123,16 @@ onMounted(async () => {
     width.value = data.width;
     height.value = data.height;
   });
+
+  window.electronApi.ipcRenderer.on('main-window-moved', (_, { x, y }) => {
+    mainWindowPosition.value = { x, y };
+  });
+
+  window.electronApi.ipcRenderer.on('main-window-resized', (_, data) => {
+    console.log(`窗口大小变为: width=${data.width}, height=${data.height}`);
+    width.value = data.width;
+    height.value = data.height;
+  });
 });
 
 /**

@@ -16,7 +16,7 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: {
-          index: resolve('src/preload/index.ts'),
+          index: resolve('src/preload/index.ts')
         }
       }
     }
@@ -29,6 +29,7 @@ export default defineConfig({
       }
     },
     server: {
+      host: true,
       hmr: true
     },
     plugins: [vue()],
