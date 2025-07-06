@@ -6,7 +6,8 @@ export default defineConfig({
   main: {
     resolve: {
       alias: {
-        '@entities': resolve('src/entities')
+        '@entities': resolve('src/entities'),
+        '@events': resolve('src/events'),
       }
     },
     plugins: [externalizeDepsPlugin()]
@@ -25,7 +26,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
-        '@entities': resolve('src/entities')
+        '@entities': resolve('src/entities'),
+        '@events': resolve('src/events'),
       }
     },
     server: {

@@ -1,19 +1,30 @@
-import { contextBridge, ipcRenderer, webUtils } from 'electron';
+/*
+ * @Author: ChaoQunPeng 1152684231@qq.com
+ * @Date: 2025-06-30 20:34:47
+ * @LastEditors: ChaoQunPeng 1152684231@qq.com
+ * @LastEditTime: 2025-07-06 13:16:00
+ * @FilePath: /perfect-pixel/src/preload/index.ts
+ * @Description:
+ */
+import { contextBridge, ipcRenderer, nativeImage, webUtils } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
+import { Events } from '../events/index';
 
 // Custom APIs for renderer
 const api = {
-  openFileDialog: options => ipcRenderer.invoke('open-file-dialog', options),
-  setWindowSize: (options, width, height) => {
-    ipcRenderer.invoke('set-window-size', options, width, height);
+  openFileDialog: options => {
+    return ipcRenderer.invoke(Events.OPEN_FILE_DIALOG, options);
   },
-  setWindowOpacity: value => ipcRenderer.invoke('set-window-opacity', value),
-  getImageSize: path => ipcRenderer.invoke('get-image-size', path),
-  fileToPath: arrayBuffer => ipcRenderer.invoke('file-to-path', arrayBuffer),
+  getImageSize: path => {
+    const img = nativeImage.createFromPath(path);
+    return img.getSize();
+  },
   getPathForFile: file => {
     return webUtils.getPathForFile(file);
   },
-  getMainWindowPosition: () => ipcRenderer.invoke('get-main-window-position')
+  getImageWindowPosition: () => {
+    return ipcRenderer.invoke(Events.GET_IMAGE_WINDOW_POSITION);
+  }
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

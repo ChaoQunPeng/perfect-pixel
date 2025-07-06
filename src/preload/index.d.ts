@@ -1,4 +1,13 @@
+/*
+ * @Author: ChaoQunPeng 1152684231@qq.com
+ * @Date: 2025-06-30 20:34:47
+ * @LastEditors: ChaoQunPeng 1152684231@qq.com
+ * @LastEditTime: 2025-07-06 13:06:39
+ * @FilePath: /perfect-pixel/src/preload/index.d.ts
+ * @Description:
+ */
 import { ElectronAPI } from '@electron-toolkit/preload';
+import { BrowserWindow } from 'electron';
 
 interface ImageFile {
   path: string;
@@ -7,14 +16,10 @@ interface ImageFile {
 }
 
 declare interface CustomAPI {
-  setWindowSize: (width: number, height: number) => Promise<void>;
   openFileDialog: (options?: Electron.OpenDialogOptions) => Promise<List<ImageFile>>;
   getImageSize: (filePath: string) => { width: number; height: number };
-  fileToPath: (file) => Promise<any>;
   getPathForFile: (file) => Promise<string>;
-  setWindowOpacity: (value: number) => Promise<void>;
-  setPanelWidthHeightValue: (width: number, height: number) => Promise<void>;
-  getMainWindowPosition: () => Promise<Array<number>>;
+  getImageWindowPosition: () => Promise<Array<number>>;
 }
 
 declare global {

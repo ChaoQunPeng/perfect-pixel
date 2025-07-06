@@ -2,8 +2,8 @@
  * @Author: ChaoQunPeng 1152684231@qq.com
  * @Date: 2025-06-28 11:15:52
  * @LastEditors: ChaoQunPeng 1152684231@qq.com
- * @LastEditTime: 2025-06-28 14:29:45
- * @FilePath: /electron-vue-opacity-tool/src/views/Toolbar.vue
+ * @LastEditTime: 2025-07-06 13:14:42
+ * @FilePath: /perfect-pixel/src/renderer/src/handle.vue
  * @Description: 
 -->
 <template>
@@ -28,8 +28,8 @@
           class="input"
           v-model:value.number="width"
           placeholder="宽度(不能为0)"
-          @blur="handleWindowUpdateSize"
-          @pressEnter="handleWindowUpdateSize"
+          @blur="handleUpdateImageWindowSize"
+          @pressEnter="handleUpdateImageWindowSize"
         />
         <CloseOutlined />
         <a-input
@@ -37,8 +37,8 @@
           class="input"
           v-model:value.number="height"
           placeholder="高度(不能为0)"
-          @blur="handleWindowUpdateSize"
-          @pressEnter="handleWindowUpdateSize"
+          @blur="handleUpdateImageWindowSize"
+          @pressEnter="handleUpdateImageWindowSize"
         />
       </a-space>
 
@@ -63,8 +63,8 @@
             addon-before="X"
             :min="0"
             :step="10"
-            @change="handleWindowUpdatePositionChangeX"
-            @step="handleWindowUpdatePositionX"
+            @change="handleImageWindowPosXChange"
+            @step="handleImageWindowPosXChange"
           />
           <div style="height: 20px"></div>
           <a-input-number
@@ -72,8 +72,8 @@
             addon-before="Y"
             :min="0"
             :step="10"
-            @change="handleWindowUpdatePositionChangeY"
-            @step="handleWindowUpdatePositionY"
+            @change="handleImageWindowPosYChange"
+            @step="handleImageWindowPosYChange"
           />
         </a-space-compact>
       </div>
@@ -97,6 +97,9 @@ import {
   LeftOutlined,
   RightOutlined
 } from '@ant-design/icons-vue';
+import { Events } from '@events/index';
+import { AppIpcRenderer } from './app-ipc';
+import { BrowserWindow } from 'electron';
 
 interface ISize {
   width: number;
@@ -115,23 +118,22 @@ const mainWindowPosition = ref({
 const offset = ref(1);
 
 onMounted(async () => {
-  let [x, y] = await window.api.getMainWindowPosition();
+  let [x, y] = await window.api.getImageWindowPosition();
 
   mainWindowPosition.value = { x, y };
 
-  window.electronApi.ipcRenderer.on('set-panel-width-height', (_, data: ISize) => {
-    width.value = data.width;
-    height.value = data.height;
+  AppIpcRenderer.on(Events.UPDATE_HANDLE_WINDOW_SIZE_VALUE, (_, payload: ISize) => {
+    width.value = payload.width;
+    height.value = payload.height;
   });
 
-  window.electronApi.ipcRenderer.on('main-window-moved', (_, { x, y }) => {
-    mainWindowPosition.value = { x, y };
+  AppIpcRenderer.on(Events.IMAGE_WINDOW_MOVED, (_, payload) => {
+    mainWindowPosition.value = { x: payload.x, y: payload.y };
   });
 
-  window.electronApi.ipcRenderer.on('main-window-resized', (_, data) => {
-    console.log(`窗口大小变为: width=${data.width}, height=${data.height}`);
-    width.value = data.width;
-    height.value = data.height;
+  AppIpcRenderer.on(Events.IMAGE_WINDOW_RESIZED, (_, payload) => {
+      width.value = payload.width;
+      height.value = payload.height;
   });
 });
 
@@ -140,124 +142,96 @@ onMounted(async () => {
  * @return {*}
  */
 const handleUpdateOpacity = () => {
-  window.api.setWindowOpacity(opacity.value / 100);
+  AppIpcRenderer.send(Events.UPDATE_IMAGE_WINDOW_OPACITY, 'handle.vue-handleUpdateOpacity', {
+    opacity: opacity.value / 100
+  });
 };
 
 /**
  * @description: 更新视窗尺寸
  * @return {*}
  */
-const handleWindowUpdateSize = () => {
+const handleUpdateImageWindowSize = () => {
   if (width.value == 0 || height.value == 0) return;
-  setWidthHeight(width.value, height.value);
-  window.api.setWindowSize(width.value, height.value);
+  setWidthHeightValue(width.value, height.value);
+
+  AppIpcRenderer.send(Events.UPDATE_IMAGE_WINDOW_SIZE, 'handle.vue-handleUpdateImageWindowSize', {
+    width: width.value,
+    height: height.value
+  });
 };
 
 /**
  * @description: 设置宽高
  * @return {*}
  */
-const setWidthHeight = (w, h) => {
+const setWidthHeightValue = (w, h) => {
   width.value = w;
   height.value = h;
 };
 
+/**
+ * @description: 移动窗口
+ * @param {*} position
+ * @return {*}
+ */
 const handleWindowMove = async position => {
-  let [x, y] = await window.api.getMainWindowPosition();
+  let [x, y] = await AppIpcRenderer.invoke(Events.GET_IMAGE_WINDOW_POSITION);
 
   mainWindowPosition.value = { x, y };
 
+  let pos = {};
+
   if (position == 'top') {
-    // window.electronApi.ipcRenderer.send('set-main-window-position', x, (y -= offset.value));
-    setWindowPositionTop(y);
+    pos = {
+      x: mainWindowPosition.value.x,
+      y: (y -= offset.value)
+    };
   } else if (position == 'bottom') {
-    // window.electronApi.ipcRenderer.send('set-main-window-position', x, (y += offset.value));
-    setWindowPositionBottom(y);
+    pos = {
+      x: mainWindowPosition.value.x,
+      y: (y += offset.value)
+    };
   } else if (position == 'left') {
-    // window.electronApi.ipcRenderer.send('set-main-window-position', (x -= offset.value), y);
-    setWindowPositionLeft(x);
+    pos = {
+      x: (x -= offset.value),
+      y: mainWindowPosition.value.y
+    };
   } else if (position == 'right') {
-    // window.electronApi.ipcRenderer.send('set-main-window-position', (x += offset.value), y);
-    setWindowPositionRight(x);
+    pos = {
+      x: (x += offset.value),
+      y: mainWindowPosition.value.y
+    };
   }
+
+  AppIpcRenderer.send(Events.UPDATE_IMAGE_WINDOW_POSITION, 'handle.vue-handleWindowMove', pos);
 };
 
-const setWindowPositionLeft = x => {
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    (x -= offset.value),
-    mainWindowPosition.value.y
-  );
-};
-
-const setWindowPositionRight = x => {
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    (x += offset.value),
-    mainWindowPosition.value.y
-  );
-};
-
-const setWindowPositionTop = y => {
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    mainWindowPosition.value.x,
-    (y -= offset.value)
-  );
-};
-
-const setWindowPositionBottom = y => {
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    mainWindowPosition.value.x,
-    (y += offset.value)
-  );
-};
-
-const handleWindowUpdatePositionChangeX = async val => {
+const handleImageWindowPosXChange = async val => {
   mainWindowPosition.value.x = val;
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    val ? val : 0,
-    mainWindowPosition.value.y
-  );
+
+  AppIpcRenderer.send(Events.UPDATE_IMAGE_WINDOW_POSITION, 'handle.vue-handleWindowMove', {
+    x: val ? val : 0,
+    y: mainWindowPosition.value.y
+  });
 };
 
-const handleWindowUpdatePositionChangeY = async val => {
+const handleImageWindowPosYChange = async val => {
   mainWindowPosition.value.y = val;
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    mainWindowPosition.value.x,
-    val ? val : 0
-  );
-};
 
-const handleWindowUpdatePositionX = async val => {
-  mainWindowPosition.value.x = val;
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    val ? val : 0,
-    mainWindowPosition.value.y
-  );
-};
-
-const handleWindowUpdatePositionY = async val => {
-  mainWindowPosition.value.y = val;
-  window.electronApi.ipcRenderer.send(
-    'set-main-window-position',
-    mainWindowPosition.value.x,
-    val ? val : 0
-  );
+  AppIpcRenderer.send(Events.UPDATE_IMAGE_WINDOW_POSITION, 'handle.vue-handleWindowMove', {
+    x: mainWindowPosition.value.x,
+    y: val ? val : 0
+  });
 };
 
 const handleClear = () => {
-  // window.api.sendClearEvent();
-  setWidthHeight(600, 600);
-  window.electronApi.ipcRenderer.send('clear');
+  setWidthHeightValue(600, 600);
+  AppIpcRenderer.send(Events.CLEAR_IMAGE, 'handle.vue-handleClear');
 };
 
 defineExpose({
-  setWidthHeight
+  setWidthHeightValue
 });
 </script>
 

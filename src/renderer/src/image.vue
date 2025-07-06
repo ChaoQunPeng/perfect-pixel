@@ -15,6 +15,8 @@
 import { ref, onMounted } from 'vue';
 import ImageLayer from './views/ImageLayer.vue';
 import { ImageFile } from '@entities/index';
+import { Events } from '@events/index';
+import { AppIpcRenderer } from './app-ipc';
 
 // type ToolbarInstance = {
 //   setWidthHeight: (width: number, height: number) => void;
@@ -23,7 +25,7 @@ import { ImageFile } from '@entities/index';
 const imageLayerList = ref<any>([]);
 
 onMounted(() => {
-  window.electronApi.ipcRenderer.on('clear', () => {
+  AppIpcRenderer.on(Events.CLEAR_IMAGE, () => {
     handleClear();
   });
 });
@@ -37,9 +39,12 @@ const addLayer = (img: any) => {
   imageLayerList.value = [];
   imageLayerList.value.push(img);
 
-  window.api.setWindowSize(img.width * 0.5, img.height * 0.5);
+  AppIpcRenderer.send(Events.UPDATE_HANDLE_WINDOW_SIZE_VALUE, 'image.vue', {
+    width: img.width * 0.5,
+    height: img.height * 0.5
+  });
 
-  window.electronApi.ipcRenderer.send('set-panel-width-height', {
+  AppIpcRenderer.send(Events.UPDATE_IMAGE_WINDOW_SIZE, 'image.vue', {
     width: img.width * 0.5,
     height: img.height * 0.5
   });
@@ -90,7 +95,10 @@ const handleNoDataClick = async () => {
 
 const handleClear = () => {
   imageLayerList.value = [];
-  window.api.setWindowSize(600, 600);
+  AppIpcRenderer.send(Events.UPDATE_IMAGE_WINDOW_SIZE, 'image.vue-handleClear', {
+    width: 600,
+    height: 600
+  });
 };
 </script>
 

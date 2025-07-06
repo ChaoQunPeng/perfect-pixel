@@ -1,101 +1,65 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage, protocol, net } from 'electron';
+import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
-// import { ImageFile } from '../entities/index';
 import { ImageFile } from '@entities/index';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+import { Events } from '@events/index';
 
 // 创建主窗口
-let mainWindow: BrowserWindow;
-let secondWindow: BrowserWindow;
+let imageWindow: BrowserWindow;
+let handleWindow: BrowserWindow;
 
-function createWindow(): void {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
+const commonWindowConfig = {
+  show: false,
+  autoHideMenuBar: true,
+  ...(process.platform === 'linux' ? { icon } : {}),
+  webPreferences: {
+    webSecurity: false, // 禁用同源策略（允许加载本地文件）
+    allowRunningInsecureContent: true, // 允许加载本地资源
+    preload: join(__dirname, '../preload/index.js'),
+    sandbox: false,
+    // nodeIntegration: true, // 启用 Node.js 集成
+    contextIsolation: false // 关闭上下文隔离（简化操作）
+  }
+};
+
+function createImageWindow(): void {
+  imageWindow = new BrowserWindow({
+    ...commonWindowConfig,
     width: 600,
     height: 600,
     opacity: 0.96,
-    show: false,
     center: true,
-    frame: false, // 关键代码：隐藏标题栏和边框
-    titleBarStyle: 'hidden', // macOS 专属样式（可选）
-    // transparent: true, // 可选：实现无边框透明效果
-    autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      webSecurity: false, // 禁用同源策略（允许加载本地文件）
-      allowRunningInsecureContent: true, // 允许加载本地资源
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      // nodeIntegration: true, // 启用 Node.js 集成
-      contextIsolation: false // 关闭上下文隔离（简化操作）
-    }
+    frame: false // 关键代码：隐藏标题栏和边框
   });
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show();
-  });
-
-  // 监听窗口移动事件
-  mainWindow.on('move', () => {
-    const [x, y] = mainWindow.getPosition();
-    console.log(`窗口移动到位置: x=${x}, y=${y}`);
-    secondWindow.webContents.send('main-window-moved', { x, y });
-  });
-
-  // 监听窗口大小变化事件
-  mainWindow.on('resize', () => {
-    const [width, height] = mainWindow.getSize();
-    console.log(`窗口大小变为: width=${width}, height=${height}`);
-    secondWindow.webContents.send('main-window-resized', { width, height });
-  });
-
-  mainWindow.webContents.setWindowOpenHandler(details => {
-    shell.openExternal(details.url);
-    return { action: 'deny' };
+  imageWindow.on('ready-to-show', () => {
+    imageWindow.show();
   });
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    imageWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    imageWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
 }
 
-function createSecondWindow(): void {
-  // Create the browser window.
-  secondWindow = new BrowserWindow({
+function createHandleWindow(): void {
+  handleWindow = new BrowserWindow({
+    ...commonWindowConfig,
     width: 280,
     height: 400,
     x: 160,
-    y: 300,
-    show: false,
-    // resizable: false,
-    // frame: false, // 关键代码：隐藏标题栏和边框
-    // titleBarStyle: 'hidden', // macOS 专属样式（可选）
-    // transparent: true, // 可选：实现无边框透明效果
-    autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      webSecurity: false, // 禁用同源策略（允许加载本地文件）
-      allowRunningInsecureContent: true, // 允许加载本地资源
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      // nodeIntegration: true, // 启用 Node.js 集成
-      contextIsolation: false // 关闭上下文隔离（简化操作）
-    }
+    y: 300
   });
 
-  secondWindow.on('ready-to-show', () => {
-    secondWindow.show();
+  handleWindow.on('ready-to-show', () => {
+    handleWindow.show();
   });
 
-  secondWindow.webContents.setWindowOpenHandler(details => {
+  handleWindow.webContents.setWindowOpenHandler(details => {
     shell.openExternal(details.url);
     return { action: 'deny' };
   });
@@ -103,9 +67,9 @@ function createSecondWindow(): void {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    secondWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/second.html`);
+    handleWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/second.html`);
   } else {
-    secondWindow.loadFile(join(__dirname, '../renderer/second.html'));
+    handleWindow.loadFile(join(__dirname, '../renderer/second.html'));
   }
 }
 
@@ -116,94 +80,22 @@ app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron');
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  ipcMain.on('set-width-height', () => {
-    if (secondWindow) {
-      secondWindow.webContents.send('set-width-height');
-    }
-  });
+  createImageWindow();
+  createHandleWindow();
 
-  ipcMain.on('clear', () => {
-    if (mainWindow) {
-      mainWindow.webContents.send('clear');
-    }
-  });
-
-  ipcMain.on('set-panel-width-height', (_, data) => {
-    if (secondWindow) {
-      secondWindow.webContents.send('set-panel-width-height', data);
-    }
-  });
-
-  ipcMain.handle('open-file-dialog', async (_, options: Electron.OpenDialogOptions) => {
-    const result = await dialog.showOpenDialog(mainWindow, options);
-    return result.filePaths.map((path: string) => {
-      const img = nativeImage.createFromPath(path);
-      const { width, height } = img.getSize();
-      return new ImageFile({
-        path,
-        width,
-        height
-      });
-    });
-  });
-
-  ipcMain.handle('get-main-window-position', _ => {
-    return mainWindow.getPosition();
-  });
-
-  // 修改主窗口位置
-  ipcMain.on('set-main-window-position', (_, x, y) => {
-    mainWindow.setPosition(x, y);
-  });
-
-  // 修改窗口大小
-  ipcMain.handle('set-window-size', (_, width, height) => {
-    mainWindow.setSize(width, height);
-  });
-
-  // 获取图片大小
-  ipcMain.handle('get-image-size', (_, filePath) => {
-    const img = nativeImage.createFromPath(filePath);
-    return img.getSize();
-  });
-
-  ipcMain.handle('file-to-path', async (_, arrayBuffer) => {
-    const buffer = Buffer.from(new Uint8Array(arrayBuffer));
-    const img = nativeImage.createFromBuffer(buffer);
-    const { width, height } = img.getSize();
-
-    // 返回临时文件路径（可选）
-    const tempPath = path.join(os.tmpdir(), `img_${Date.now()}.png`);
-    fs.writeFileSync(tempPath, buffer);
-    return {
-      width,
-      height,
-      path: tempPath, // 完整的文件系统路径
-      url: `file://${tempPath}` // 可直接用于 <img> 标签
-    };
-  });
-
-  // 修改透明度
-  ipcMain.handle('set-window-opacity', (_, opacity) => {
-    mainWindow.setOpacity(opacity);
-  });
-
-  createWindow();
-  createSecondWindow();
+  imageWindowEventListener();
+  setupIPCHandlers();
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-      createSecondWindow();
+      createImageWindow();
+      createHandleWindow();
     }
   });
 });
@@ -216,6 +108,66 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+function imageWindowEventListener() {
+  // 监听窗口移动事件
+  imageWindow.on('move', () => {
+    const [x, y] = imageWindow.getPosition();
+    handleWindow.webContents.send(Events.IMAGE_WINDOW_MOVED, { x, y });
+  });
+
+  // 监听窗口大小变化事件
+  imageWindow.on('resize', () => {
+    const [width, height] = imageWindow.getSize();
+    handleWindow.webContents.send(Events.IMAGE_WINDOW_RESIZED, { width, height });
+  });
+
+  //清空图片
+  ipcMain.on(Events.CLEAR_IMAGE, _ => {
+    imageWindow.webContents.send(Events.CLEAR_IMAGE);
+  });
+
+  // 修改image window 透明度
+  ipcMain.on(Events.UPDATE_IMAGE_WINDOW_OPACITY, (_, _source, payload) => {
+    imageWindow.setOpacity(payload.opacity);
+  });
+
+  // 改变image window 大小
+  ipcMain.on(Events.UPDATE_IMAGE_WINDOW_SIZE, (_, _source, payload) => {
+    imageWindow.setSize(payload.width, payload.height);
+  });
+
+  // 改变image window 位置
+  ipcMain.on(Events.UPDATE_IMAGE_WINDOW_POSITION, (_, _source, payload) => {
+    imageWindow.setPosition(payload.x, payload.y);
+  });
+
+  // 监听修改Handle Window 显示的值的事件
+  ipcMain.on(Events.UPDATE_HANDLE_WINDOW_SIZE_VALUE, (_, _source, payload) => {
+    handleWindow.webContents.send(Events.UPDATE_HANDLE_WINDOW_SIZE_VALUE, payload);
+  });
+}
+
+function setupIPCHandlers() {
+  // 获取image window位置
+  ipcMain.handle(Events.GET_IMAGE_WINDOW_POSITION, _ => {
+    return imageWindow.getPosition();
+  });
+
+  // 打开文件选择
+  ipcMain.handle('open-file-dialog', async (_, options: Electron.OpenDialogOptions) => {
+    const result = await dialog.showOpenDialog(imageWindow, options);
+    return result.filePaths.map((path: string) => {
+      const img = nativeImage.createFromPath(path);
+      const { width, height } = img.getSize();
+      return new ImageFile({
+        path,
+        width,
+        height
+      });
+    });
+  });
+}
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

@@ -32,8 +32,6 @@ defineProps<{
   layers: ImageFile[];
 }>();
 
-// const layers = ref<ImageFile[]>(props.layers);
-
 const emit = defineEmits(['drop', 'no-data-click']);
 const handleDrop = (e: DragEvent) => {
   emit('drop', e);
