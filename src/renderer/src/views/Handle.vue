@@ -2,8 +2,8 @@
  * @Author: ChaoQunPeng 1152684231@qq.com
  * @Date: 2025-06-28 11:15:52
  * @LastEditors: ChaoQunPeng 1152684231@qq.com
- * @LastEditTime: 2025-07-06 13:14:42
- * @FilePath: /perfect-pixel/src/renderer/src/handle.vue
+ * @LastEditTime: 2025-07-06 13:51:20
+ * @FilePath: /perfect-pixel/src/renderer/src/views/handle-index.vue
  * @Description: 
 -->
 <template>
@@ -98,8 +98,8 @@ import {
   RightOutlined
 } from '@ant-design/icons-vue';
 import { Events } from '@events/index';
-import { AppIpcRenderer } from './app-ipc';
-import { BrowserWindow } from 'electron';
+import { AppIpcRenderer } from '@renderer/utils/app-ipc';
+import { INIT_IMAGE_SIZE } from '@constant/index';
 
 interface ISize {
   width: number;
@@ -107,8 +107,8 @@ interface ISize {
 }
 
 const opacity = ref(96);
-const width = ref(600);
-const height = ref(600);
+const width = ref(INIT_IMAGE_SIZE.width);
+const height = ref(INIT_IMAGE_SIZE.height);
 
 const mainWindowPosition = ref({
   x: 0,
@@ -132,8 +132,8 @@ onMounted(async () => {
   });
 
   AppIpcRenderer.on(Events.IMAGE_WINDOW_RESIZED, (_, payload) => {
-      width.value = payload.width;
-      height.value = payload.height;
+    width.value = payload.width;
+    height.value = payload.height;
   });
 });
 
@@ -176,7 +176,7 @@ const setWidthHeightValue = (w, h) => {
  * @return {*}
  */
 const handleWindowMove = async position => {
-  let [x, y] = await AppIpcRenderer.invoke(Events.GET_IMAGE_WINDOW_POSITION);
+  let [x, y] = await window.api.getImageWindowPosition();
 
   mainWindowPosition.value = { x, y };
 
@@ -226,7 +226,7 @@ const handleImageWindowPosYChange = async val => {
 };
 
 const handleClear = () => {
-  setWidthHeightValue(600, 600);
+  setWidthHeightValue(INIT_IMAGE_SIZE.width, INIT_IMAGE_SIZE.height);
   AppIpcRenderer.send(Events.CLEAR_IMAGE, 'handle.vue-handleClear');
 };
 

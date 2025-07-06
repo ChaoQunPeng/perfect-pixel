@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import { ImageFile } from '@entities/index';
 import { Events } from '@events/index';
+import { INIT_IMAGE_SIZE } from '@constant/index';
 
 // 创建主窗口
 let imageWindow: BrowserWindow;
@@ -26,8 +27,8 @@ const commonWindowConfig = {
 function createImageWindow(): void {
   imageWindow = new BrowserWindow({
     ...commonWindowConfig,
-    width: 600,
-    height: 600,
+    width: INIT_IMAGE_SIZE.width,
+    height: INIT_IMAGE_SIZE.height,
     opacity: 0.96,
     center: true,
     frame: false // 关键代码：隐藏标题栏和边框
@@ -67,9 +68,9 @@ function createHandleWindow(): void {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    handleWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/second.html`);
+    handleWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/handle.html`);
   } else {
-    handleWindow.loadFile(join(__dirname, '../renderer/second.html'));
+    handleWindow.loadFile(join(__dirname, '../renderer/handle.html'));
   }
 }
 

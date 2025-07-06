@@ -7,6 +7,7 @@
     "src/preload/*.d.ts",
     "src/entities/*",
     "src/events/*",
+    "src/constant/*",
   ],
   "compilerOptions": {
     "composite": true,
@@ -20,7 +21,10 @@
       ],
       "@events/*": [
         "src/events/*"
-      ]
+      ],
+      "@constant/*": [
+        "src/constant/*"
+      ],
     }
   }
 }
