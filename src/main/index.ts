@@ -156,7 +156,7 @@ function setupIPCHandlers() {
   });
 
   // 打开文件选择
-  ipcMain.handle('open-file-dialog', async (_, options: Electron.OpenDialogOptions) => {
+  ipcMain.handle(Events.OPEN_FILE_DIALOG, async (_, options: Electron.OpenDialogOptions) => {
     const result = await dialog.showOpenDialog(imageWindow, options);
     return result.filePaths.map((path: string) => {
       const img = nativeImage.createFromPath(path);
