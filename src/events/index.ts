@@ -2,7 +2,7 @@
  * @Author: ChaoQunPeng 1152684231@qq.com
  * @Date: 2025-07-05 22:48:58
  * @LastEditors: ChaoQunPeng 1152684231@qq.com
- * @LastEditTime: 2025-07-06 13:15:50
+ * @LastEditTime: 2025-07-16 22:44:09
  * @FilePath: /perfect-pixel/src/events/index.ts
  * @Description:
  */
@@ -15,5 +15,6 @@ export const Events = {
   UPDATE_HANDLE_WINDOW_SIZE_VALUE: 'update-handle-window-size-value',
   IMAGE_WINDOW_MOVED: 'image-window-moved',
   IMAGE_WINDOW_RESIZED: 'image-window-resized',
-  OPEN_FILE_DIALOG: 'open-file-dialog'
+  OPEN_FILE_DIALOG: 'open-file-dialog',
+  UPDATE_IMAGE_WINDOW_IGNORE_MOUSE_EVENTS: 'update-image-window-ignore-mouse-events'
 };

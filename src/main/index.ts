@@ -31,7 +31,7 @@ function createImageWindow(): void {
     height: INIT_IMAGE_SIZE.height,
     opacity: 0.96,
     center: true,
-    frame: false // 关键代码：隐藏标题栏和边框
+    frame: false // 隐藏标题栏和边框
   });
 
   imageWindow.on('ready-to-show', () => {
@@ -51,9 +51,9 @@ function createHandleWindow(): void {
   handleWindow = new BrowserWindow({
     ...commonWindowConfig,
     width: 280,
-    height: 400,
+    height: 460,
     x: 160,
-    y: 300
+    y: 240
   });
 
   handleWindow.on('ready-to-show', () => {
@@ -126,6 +126,14 @@ function imageWindowEventListener() {
   //清空图片
   ipcMain.on(Events.CLEAR_IMAGE, _ => {
     imageWindow.webContents.send(Events.CLEAR_IMAGE);
+  });
+
+  // 修改image window 穿透
+  ipcMain.on(Events.UPDATE_IMAGE_WINDOW_IGNORE_MOUSE_EVENTS, (_, _source, payload) => {
+    imageWindow.setAlwaysOnTop(payload.ignoreMouseEvents);
+    imageWindow.setIgnoreMouseEvents(payload.ignoreMouseEvents, {
+      // forward: true
+    });
   });
 
   // 修改image window 透明度

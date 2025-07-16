@@ -2,14 +2,24 @@
  * @Author: ChaoQunPeng 1152684231@qq.com
  * @Date: 2025-06-28 11:15:52
  * @LastEditors: ChaoQunPeng 1152684231@qq.com
- * @LastEditTime: 2025-07-06 13:51:20
- * @FilePath: /perfect-pixel/src/renderer/src/views/handle-index.vue
+ * @LastEditTime: 2025-07-16 23:04:50
+ * @FilePath: /perfect-pixel/src/renderer/src/views/Handle.vue
  * @Description: 
 -->
 <template>
   <!-- 工具栏 -->
   <div class="toolbar-area">
     <div class="body">
+      <div class="label">开发模式</div>
+      <div class="slider">
+        <a-switch
+          v-model:checked="state.setIgnoreMouseEvents"
+          checked-children="开"
+          un-checked-children="关"
+          @change="handleUpdateIgnoreMouseEvents"
+        />
+      </div>
+
       <div class="label">透明度设置</div>
       <div class="slider">
         <a-slider
@@ -41,6 +51,7 @@
           @pressEnter="handleUpdateImageWindowSize"
         />
       </a-space>
+      <!-- <a-button block>最大化</a-button> -->
 
       <div class="label">调整图片位置</div>
       <div class="position-area">
@@ -87,7 +98,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { h } from 'vue';
 import {
   CloseOutlined,
@@ -117,6 +128,10 @@ const mainWindowPosition = ref({
 
 const offset = ref(1);
 
+const state = reactive({
+  setIgnoreMouseEvents: false
+});
+
 onMounted(async () => {
   let [x, y] = await window.api.getImageWindowPosition();
 
@@ -136,6 +151,20 @@ onMounted(async () => {
     height.value = payload.height;
   });
 });
+
+/**
+ * @description: 是否穿透
+ * @return {*}
+ */
+const handleUpdateIgnoreMouseEvents = (val: boolean) => {
+  AppIpcRenderer.send(
+    Events.UPDATE_IMAGE_WINDOW_IGNORE_MOUSE_EVENTS,
+    'handle.vue-handleUpdateIgnoreMouseEvents',
+    {
+      ignoreMouseEvents: val
+    }
+  );
+};
 
 /**
  * @description: 更新透明度
